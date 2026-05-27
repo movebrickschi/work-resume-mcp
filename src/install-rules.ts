@@ -1,6 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveWorkspaceRoot } from './config.js';
 
 export type RuleTarget = 'cursor' | 'claude' | 'codex' | 'agents' | 'all';
 
@@ -143,8 +144,9 @@ export function parseAutoInstallTargets(): RuleTarget[] {
 
 export async function tryAutoInstallRules(packageRoot: string): Promise<InstallRulesResult | null> {
   if (!shouldAutoInstallRules()) return null;
+  const cwd = resolveWorkspaceRoot();
   return installRules(packageRoot, {
-    cwd: process.cwd(),
+    cwd,
     targets: parseAutoInstallTargets(),
     globalCodex: process.env.WORK_RESUME_AUTO_INSTALL_GLOBAL_CODEX === '1',
   });

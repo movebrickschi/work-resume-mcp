@@ -1,3 +1,5 @@
+import * as path from 'node:path';
+
 export interface Config {
   projectRoot: string;
   storeDir: string;
@@ -31,14 +33,43 @@ function parseEnum<T extends string>(name: string, defaultVal: T, allowed: reado
   return raw as T;
 }
 
+function isMcpServerPackageDir(dir: string): boolean {
+  const n = dir.replace(/\\/g, '/').toLowerCase();
+  return n.includes('/work-resume-mcp') || n.endsWith('/dist');
+}
+
+/** Cursor may spawn MCP with cwd = server package dir; prefer WORKSPACE_FOLDER_PATHS then. */
+export function resolveWorkspaceRoot(fallbackCwd = process.cwd()): string {
+  if (process.env.WORK_RESUME_PROJECT_ROOT?.trim()) {
+    return path.resolve(process.env.WORK_RESUME_PROJECT_ROOT.trim());
+  }
+
+  const fallback = path.resolve(fallbackCwd);
+
+  const wfp = process.env.WORKSPACE_FOLDER_PATHS?.trim();
+  if (wfp) {
+    const parts = wfp.split(path.delimiter).flatMap((p) => p.split(',')).map((s) => s.trim()).filter(Boolean);
+    const ws = parts[0] ? path.resolve(parts[0]) : null;
+    if (ws && isMcpServerPackageDir(fallback)) return ws;
+  }
+
+  if (process.env.VSCODE_CWD?.trim() && isMcpServerPackageDir(fallback)) {
+    return path.resolve(process.env.VSCODE_CWD.trim());
+  }
+
+  return fallback;
+}
+
 export function loadConfig(cwd: string): Config {
   const langsRaw = process.env.WORK_RESUME_LANGS;
   const langs = langsRaw
     ? langsRaw.split(',').map((s) => s.trim()).filter(Boolean)
     : DEFAULT_LANGS;
 
+  const projectRoot = resolveWorkspaceRoot(cwd);
+
   return {
-    projectRoot: process.env.WORK_RESUME_PROJECT_ROOT || cwd,
+    projectRoot,
     storeDir: process.env.WORK_RESUME_DIR || '.work-resume',
     autoIntervalMs: parseIntEnv('WORK_RESUME_AUTO_INTERVAL_MS', 60_000, 1),
     autoRetentionHours: parseIntEnv('WORK_RESUME_AUTO_RETENTION_HOURS', 24, 1),

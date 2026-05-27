@@ -8,7 +8,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import { loadConfig } from './config.js';
+import { loadConfig, resolveWorkspaceRoot } from './config.js';
 import { autoSnapshotIfStale, SKIP_AUTO_SNAPSHOT } from './auto-snapshot.js';
 import { saveProgress, type SaveProgressInput } from './tools/save-progress.js';
 import { resumeLatest, type ResumeLatestInput } from './tools/resume-latest.js';
@@ -132,15 +132,16 @@ const TOOL_SCHEMAS = {
 } as const;
 
 async function main() {
-  const workspaceRoot = process.cwd();
+  const workspaceRoot = resolveWorkspaceRoot();
   const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const cfg = loadConfig(workspaceRoot);
 
   try {
     const auto = await tryAutoInstallRules(pkgRoot);
     if (auto?.written.length) {
-      console.error(`[work-resume-mcp] auto-installed rules (${auto.written.length} file(s))`);
+      console.error(`[work-resume-mcp] auto-installed rules (${auto.written.length} file(s)) → ${auto.written.join(', ')}`);
     }
+    console.error(`[work-resume-mcp] workspaceRoot=${workspaceRoot} (cwd=${process.cwd()})`);
   } catch (err) {
     console.error('[work-resume-mcp] auto-install rules failed (non-fatal):', err);
   }
