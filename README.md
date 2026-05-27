@@ -48,7 +48,20 @@ args = ["work-resume-mcp"]
 
 ## 配置 Rule
 
-把 [`rules/RULE.md`](rules/RULE.md) 的内容贴到你 IDE 的规则位置（详见该文件末尾"各家 IDE 安装位置"小节）。
+**自动生成（推荐）** — 在项目根执行：
+
+```bash
+# Cursor + Claude + 项目 AGENTS.md
+npx work-resume-mcp install-rules --target all
+
+# 含 Codex 全局 ~/.codex/AGENTS.md
+npx work-resume-mcp install-rules --target all --global-codex
+
+# 仅 Cursor
+npx work-resume-mcp install-rules --target cursor --cwd /path/to/project
+```
+
+**手动**：把 [`rules/RULE.md`](rules/RULE.md) 复制到 IDE 规则位置（见该文件末尾表格）。
 
 ## 5 个工具
 

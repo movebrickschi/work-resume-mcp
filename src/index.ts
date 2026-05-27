@@ -16,6 +16,7 @@ import { listCheckpoints, type ListCheckpointsInput } from './tools/list-checkpo
 import { diffSince, type DiffSinceInput } from './tools/diff-since.js';
 import { clearCheckpoints, type ClearCheckpointsInput } from './tools/clear-checkpoints.js';
 import { preloadAll } from './tree-sitter/lazy-loader.js';
+import { runInstallRulesCli } from './install-rules.js';
 
 export interface DispatchError extends Error { code: string; }
 
@@ -171,8 +172,16 @@ function isMainModule(): boolean {
 }
 
 if (isMainModule()) {
-  main().catch((err) => {
-    console.error('[work-resume-mcp] fatal:', err);
-    process.exit(1);
-  });
+  const sub = process.argv[2];
+  if (sub === 'install-rules') {
+    runInstallRulesCli(process.argv.slice(3)).catch((err) => {
+      console.error('[work-resume-mcp] install-rules failed:', err);
+      process.exit(1);
+    });
+  } else {
+    main().catch((err) => {
+      console.error('[work-resume-mcp] fatal:', err);
+      process.exit(1);
+    });
+  }
 }
