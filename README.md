@@ -1,5 +1,90 @@
 # work-resume-mcp
 
-Cross-session resume MCP server. See `docs/specs/2026-05-27-work-resume-design.md`.
+> 跨会话续写 MCP server — 让 Cursor / Claude Code / Codex 在网络断开 / IDE 崩溃 / 新会话开始时无缝接续工作进度。
 
-WIP — implementation in progress per `docs/plans/2026-05-27-work-resume-impl-plan.md`.
+完整设计：[`docs/specs/2026-05-27-work-resume-design.md`](docs/specs/2026-05-27-work-resume-design.md)
+实现计划：[`docs/plans/2026-05-27-work-resume-impl-plan.md`](docs/plans/2026-05-27-work-resume-impl-plan.md)
+
+## 安装
+
+```bash
+# 全局安装（推荐）
+npm install -g work-resume-mcp
+
+# 或临时跑
+npx work-resume-mcp
+```
+
+## 注册到 IDE
+
+### Cursor (`~/.cursor/mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "work-resume": {
+      "command": "npx",
+      "args": ["work-resume-mcp"]
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add work-resume -- npx work-resume-mcp
+```
+
+### Codex CLI
+
+`~/.codex/config.toml` 添加：
+
+```toml
+[mcp_servers.work-resume]
+command = "npx"
+args = ["work-resume-mcp"]
+```
+
+## 配置 Rule
+
+把 [`rules/RULE.md`](rules/RULE.md) 的内容贴到你 IDE 的规则位置（详见该文件末尾"各家 IDE 安装位置"小节）。
+
+## 5 个工具
+
+| 工具 | 用途 |
+|---|---|
+| `save_progress` | 保存当前进度（语义快照） |
+| `resume_latest` | 新会话获取最近进度 |
+| `list_checkpoints` | 浏览历史快照 |
+| `diff_since` | 看从某快照到现在改了什么 |
+| `clear_checkpoints` | 清理旧快照（带 dry_run + 软删除） |
+
+## 环境变量
+
+完整列表见 [spec §5](docs/specs/2026-05-27-work-resume-design.md#5-实现技术栈)。常用：
+
+- `WORK_RESUME_PROJECT_ROOT` — 强制项目根
+- `WORK_RESUME_AUTO_RETENTION_HOURS` — 物理快照保留时长（默认 24）
+- `WORK_RESUME_LANGS` — tree-sitter 启用的语言列表
+- `WORK_RESUME_GRAMMAR_LOAD` — `lazy` (默认) / `eager`
+
+## v1 已知限制
+
+- tree-sitter grammar 必须随包提供 WASM 文件；若上游 npm 包没预编 WASM，需要本地 `tree-sitter build-wasm` 一次（见 spec §3.3）。
+- 跨设备同步未实现（v2）；语义快照随 git commit `.work-resume/` 可半同步。
+- 极端"AI 完全没机会调任何工具就断了"场景的物理快照可能为空（v2 daemon 解决）。
+
+## 开发
+
+```bash
+npm install
+npm test              # vitest 全套单测
+npm run typecheck     # tsc --noEmit
+npm run build         # 生成 dist/
+npm run dev           # tsx 直跑（本地调试）
+```
+
+## License
+
+MIT
