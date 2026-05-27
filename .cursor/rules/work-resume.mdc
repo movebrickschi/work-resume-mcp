@@ -1,0 +1,31 @@
+---
+description: work-resume 进度续写 — save_progress / resume_latest 触发规则
+globs: *
+alwaysApply: true
+---
+
+# work-resume 进度续写规则
+
+> 把本文件复制到对应 IDE 的 Rule / AGENTS.md 位置；三家共用一份内容。
+
+## 必须触发 save_progress 的时机
+1. 每次 TodoWrite 标记 status="completed" 后立即调用
+2. 用户说"先停一下"/"暂停"/"明天继续"/"下班了"时
+3. 切换工作主题前（=当前打算做的下一步不在已有 next_steps 列表里且无明显关联）
+4. 遇到 blocker 时（=无法仅靠 AI 自己解决、需要用户或外部资源的卡点，必填 blockers 字段）
+5. 每次调用 Edit/Write 工具后，下一次输出文本前必须调用
+6. 每条用户消息回复完成前必须调用
+
+## 必须触发 resume_latest 的时机
+1. 新会话的第一条用户消息后，若用户未明确说"全新任务"
+2. 用户说"接着上次"/"恢复"/"resume"/"昨天做到哪了"时
+
+## save_progress 字段硬要求
+- summary：必须包含"已完成什么 + 正在做什么"两段
+- next_steps：每条以动词开头，具体到文件或函数名
+- files_in_focus：精确到文件路径，是绝对必要字段
+- blockers：当前卡点；没有就传空数组
+
+## 严禁
+- 跳过 save_progress 直接回复"OK 完成了"
+- 在 summary 里写"做了一些工作"这类模糊描述
