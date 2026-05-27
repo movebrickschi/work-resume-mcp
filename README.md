@@ -48,7 +48,31 @@ args = ["work-resume-mcp"]
 
 ## 配置 Rule
 
-**自动生成（推荐）** — 在项目根执行：
+### 自动绑定 MCP（推荐，零手动）
+
+在 `mcp.json` 的 `work-resume` 条目加 `env`，**每次 MCP 启动**自动写入当前工作区的 Rule 文件，并注入 MCP `instructions`：
+
+```json
+"work-resume": {
+  "command": "npx",
+  "args": ["work-resume-mcp"],
+  "env": {
+    "WORK_RESUME_AUTO_INSTALL_RULES": "1",
+    "WORK_RESUME_AUTO_INSTALL_TARGETS": "cursor,claude,agents",
+    "WORK_RESUME_AUTO_INSTALL_GLOBAL_CODEX": "0"
+  }
+}
+```
+
+| 环境变量 | 含义 |
+|---|---|
+| `WORK_RESUME_AUTO_INSTALL_RULES` | `1` = 启动时自动 `install-rules` |
+| `WORK_RESUME_AUTO_INSTALL_TARGETS` | 逗号分隔：`cursor,claude,agents,codex` |
+| `WORK_RESUME_AUTO_INSTALL_GLOBAL_CODEX` | `1` = 同时写 `~/.codex/AGENTS.md` |
+
+### 手动 / CLI
+
+**一次性命令** — 在项目根执行：
 
 ```bash
 # Cursor + Claude + 项目 AGENTS.md

@@ -16,7 +16,7 @@ import { listCheckpoints, type ListCheckpointsInput } from './tools/list-checkpo
 import { diffSince, type DiffSinceInput } from './tools/diff-since.js';
 import { clearCheckpoints, type ClearCheckpointsInput } from './tools/clear-checkpoints.js';
 import { preloadAll } from './tree-sitter/lazy-loader.js';
-import { runInstallRulesCli } from './install-rules.js';
+import { runInstallRulesCli, tryAutoInstallRules, buildServerInstructions } from './install-rules.js';
 
 export interface DispatchError extends Error { code: string; }
 
@@ -133,15 +133,27 @@ const TOOL_SCHEMAS = {
 
 async function main() {
   const workspaceRoot = process.cwd();
+  const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const cfg = loadConfig(workspaceRoot);
+
+  try {
+    const auto = await tryAutoInstallRules(pkgRoot);
+    if (auto?.written.length) {
+      console.error(`[work-resume-mcp] auto-installed rules (${auto.written.length} file(s))`);
+    }
+  } catch (err) {
+    console.error('[work-resume-mcp] auto-install rules failed (non-fatal):', err);
+  }
 
   if (cfg.grammarLoad === 'eager') {
     await preloadAll(cfg.langs).catch(() => null);
   }
 
+  const instructions = await buildServerInstructions(pkgRoot).catch(() => undefined);
+
   const server = new Server(
     { name: 'work-resume-mcp', version: '0.1.0' },
-    { capabilities: { tools: {} } },
+    { capabilities: { tools: {} }, instructions },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({

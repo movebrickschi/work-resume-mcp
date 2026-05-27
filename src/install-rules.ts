@@ -131,6 +131,34 @@ export function resolvePackageRoot(fromDir: string): string {
   return fromDir;
 }
 
+export function shouldAutoInstallRules(): boolean {
+  return process.env.WORK_RESUME_AUTO_INSTALL_RULES === '1';
+}
+
+export function parseAutoInstallTargets(): RuleTarget[] {
+  const raw = process.env.WORK_RESUME_AUTO_INSTALL_TARGETS;
+  if (!raw?.trim()) return ['cursor', 'claude', 'agents'];
+  return raw.split(',').map((s) => s.trim()).filter(Boolean) as RuleTarget[];
+}
+
+export async function tryAutoInstallRules(packageRoot: string): Promise<InstallRulesResult | null> {
+  if (!shouldAutoInstallRules()) return null;
+  return installRules(packageRoot, {
+    cwd: process.cwd(),
+    targets: parseAutoInstallTargets(),
+    globalCodex: process.env.WORK_RESUME_AUTO_INSTALL_GLOBAL_CODEX === '1',
+  });
+}
+
+export async function buildServerInstructions(packageRoot: string): Promise<string> {
+  const body = await loadRuleBody(packageRoot);
+  return [
+    'work-resume-mcp is active. Follow these rules in addition to any project Rule files:',
+    '',
+    body,
+  ].join('\n');
+}
+
 export async function runInstallRulesCli(argv: string[]): Promise<void> {
   const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   let cwd = process.cwd();
