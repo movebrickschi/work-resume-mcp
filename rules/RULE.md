@@ -21,16 +21,43 @@
 - blockers：当前卡点；没有就传空数组
 
 ## 跨项目工作（Cursor 工作区本身不是 git 仓库）
+
+> ⚠️ **跨项目调用是最容易出错的地方。漏 `repo_root` 或路径分隔符不一致都会让整次工具调用失败。**
+
 当用户的 Cursor 工作区是空目录或非 git 目录、AI 实际修改的是兄弟项目时，调用 save_progress / resume_latest / list_checkpoints / diff_since / clear_checkpoints 必须：
-- **优先**：显式传 `repo_root`，绝对路径，例如 `"repo_root": "C:/lcc/workspace/huizhi-playlet-app"`
+- **优先**：显式传 `repo_root`，绝对路径，例如 `"repo_root": "C:\\lcc\\workspace\\huizhi-playlet-app"`
 - **或**：files_in_focus 全部使用绝对路径（save_progress 会自动从绝对路径回溯找 `.git`）
 - 不要把 files_in_focus 写成相对路径而又不传 repo_root —— 会报 NOT_IN_GIT_REPO
 - 多个文件来自不同仓库 → 拆成多次 save_progress，每次只覆盖一个 repo_root
+- **Windows 路径分隔符**：`repo_root` 与 `files_in_focus` 必须用同一种斜杠（推荐统一用反斜杠 `\\`）；混用 `/` 与 `\\` 在 Windows 上可能触发 PATH_ESCAPE
+
+### 正确调用模板（直接抄）
+
+```json
+{
+  "summary": "已完成 X / 正在做 Y",
+  "next_steps": ["改 src/foo.ts 的 bar() 实现"],
+  "files_in_focus": ["C:\\lcc\\workspace\\<项目名>\\src\\foo.ts"],
+  "blockers": [],
+  "repo_root": "C:\\lcc\\workspace\\<项目名>"
+}
+```
+
+### 错误示范（必报错）
+
+```json
+{
+  "summary": "...",
+  "files_in_focus": ["src/foo.ts"]
+}
+```
+缺 `repo_root` + 用相对路径 → `NOT_IN_GIT_REPO`。
 
 ## 严禁
 - 跳过 save_progress 直接回复"OK 完成了"
 - 在 summary 里写"做了一些工作"这类模糊描述
 - 跨项目工作时省略 repo_root 又写相对路径，导致工具失败后放弃保存
+- 工具报 `NOT_IN_GIT_REPO` / `PATH_ESCAPE` 后**用同样参数重试** —— 必先补 `repo_root` 或统一斜杠再重试
 
 ## 各家 IDE 安装位置
 
