@@ -25,8 +25,11 @@
 - 在 summary 里写"做了一些工作"这类模糊描述
 
 ## 各家 IDE 安装位置
-| IDE | 位置 |
-|---|---|
-| Cursor | `.cursor/rules/work-resume.mdc`（手动复制本文件内容） |
-| Claude Code | `.claude/rules/` 或项目根 `AGENTS.md` 末尾追加 |
-| Codex CLI | `~/.codex/AGENTS.md` 或项目 `AGENTS.md` |
+
+推荐用 `npx work-resume-mcp install-rules --target all`（或在 mcp.json 里设 `WORK_RESUME_AUTO_INSTALL_RULES=1`）自动生成；下表是手动放置位置。
+
+| IDE | 位置 | 手动复制源 |
+|---|---|---|
+| Cursor | `.cursor/rules/work-resume.mdc` | [`examples/cursor-rule.mdc`](../examples/cursor-rule.mdc)（带 frontmatter） |
+| Claude Code | `.claude/rules/work-resume.md` 或项目根 `AGENTS.md` 末尾追加 | 本文件正文（`## 必须触发` 到 `## 严禁` 之间） |
+| Codex CLI | `~/.codex/AGENTS.md` 或项目 `AGENTS.md` | 同上 |
