@@ -85,7 +85,12 @@ npx work-resume-mcp install-rules --target all --global-codex
 npx work-resume-mcp install-rules --target cursor --cwd /path/to/project
 ```
 
-**手动**：把 [`rules/RULE.md`](rules/RULE.md) 复制到 IDE 规则位置（见该文件末尾表格）。
+**手动**：
+
+- Cursor：复制 [`examples/cursor-rule.mdc`](examples/cursor-rule.mdc) 到 `<项目根>/.cursor/rules/work-resume.mdc`
+- Claude Code / Codex / AGENTS.md：复制 [`rules/RULE.md`](rules/RULE.md) 到对应位置（见该文件末尾表格）
+
+> **注意**：本仓库的 `.cursor/rules/work-resume.mdc` / `.claude/rules/work-resume.md` / `AGENTS.md` 已加入 `.gitignore`，由 MCP 启动时 `install-rules` 自动生成；示例模板请用 `examples/cursor-rule.mdc`。
 
 ## 5 个工具
 

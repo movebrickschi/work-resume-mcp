@@ -6,3 +6,9 @@ coverage/
 .idea/
 .vscode/
 .work-resume/
+
+# install-rules autogen — 由本项目的 MCP server 自身在 cwd=packageRoot
+# 启动时回写到这里，避免 git status 永远脏；示例模板见 examples/
+.cursor/rules/work-resume.mdc
+.claude/rules/work-resume.md
+AGENTS.md

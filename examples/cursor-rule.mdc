@@ -4,9 +4,11 @@ globs: *
 alwaysApply: true
 ---
 
-# work-resume 进度续写规则
+# work-resume 进度续写规则（示例）
 
-> 把本文件复制到对应 IDE 的 Rule / AGENTS.md 位置；三家共用一份内容。
+> 这是一份 Cursor Rule 示例模板，**不会被 Cursor 直接加载**（路径不在 `.cursor/rules/` 下）。
+> 推荐用 `npx work-resume-mcp install-rules --target cursor` 自动生成 `.cursor/rules/work-resume.mdc`；
+> 或手动把本文件复制到 `<项目根>/.cursor/rules/work-resume.mdc`。
 
 ## 必须触发 save_progress 的时机
 1. 每次 TodoWrite 标记 status="completed" 后立即调用
