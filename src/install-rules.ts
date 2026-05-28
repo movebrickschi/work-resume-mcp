@@ -145,6 +145,9 @@ export function parseAutoInstallTargets(): RuleTarget[] {
 export async function tryAutoInstallRules(packageRoot: string): Promise<InstallRulesResult | null> {
   if (!shouldAutoInstallRules()) return null;
   const cwd = resolveWorkspaceRoot();
+  if (path.resolve(cwd) === path.resolve(packageRoot)) {
+    return null;
+  }
   return installRules(packageRoot, {
     cwd,
     targets: parseAutoInstallTargets(),

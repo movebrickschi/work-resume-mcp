@@ -20,9 +20,17 @@
 - files_in_focus：精确到文件路径，是绝对必要字段
 - blockers：当前卡点；没有就传空数组
 
+## 跨项目工作（Cursor 工作区本身不是 git 仓库）
+当用户的 Cursor 工作区是空目录或非 git 目录、AI 实际修改的是兄弟项目时，调用 save_progress / resume_latest / list_checkpoints / diff_since / clear_checkpoints 必须：
+- **优先**：显式传 `repo_root`，绝对路径，例如 `"repo_root": "C:/lcc/workspace/huizhi-playlet-app"`
+- **或**：files_in_focus 全部使用绝对路径（save_progress 会自动从绝对路径回溯找 `.git`）
+- 不要把 files_in_focus 写成相对路径而又不传 repo_root —— 会报 NOT_IN_GIT_REPO
+- 多个文件来自不同仓库 → 拆成多次 save_progress，每次只覆盖一个 repo_root
+
 ## 严禁
 - 跳过 save_progress 直接回复"OK 完成了"
 - 在 summary 里写"做了一些工作"这类模糊描述
+- 跨项目工作时省略 repo_root 又写相对路径，导致工具失败后放弃保存
 
 ## 各家 IDE 安装位置
 

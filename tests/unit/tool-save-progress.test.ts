@@ -92,4 +92,59 @@ describe('saveProgress', () => {
     const saved = JSON.parse(await fs.readFile(file, 'utf8'));
     expect(saved.summary).toBe('wip on login UI');
   });
+
+  it('honors explicit repo_root for cross-project work', async () => {
+    (scanRepos as any).mockResolvedValue([]);
+    (resolveRepoForFile as any).mockReturnValue(null);
+    const out = await saveProgress(workspaceRoot, {
+      summary: 'cross-project commit and push',
+      next_steps: ['verify deploy'],
+      files_in_focus: [path.join(frontend, 'src/router/index.ts')],
+      repo_root: frontend,
+    });
+    expect(out.repo_root).toBe(frontend);
+    expect(out.checkpoint_id).toMatch(/^\d{8}-\d{6}-[a-f0-9]{6}$/);
+  });
+
+  it('rejects when files_in_focus escapes explicit repo_root', async () => {
+    (scanRepos as any).mockResolvedValue([]);
+    await expect(saveProgress(workspaceRoot, {
+      summary: 'mismatched repo root',
+      next_steps: ['x'],
+      files_in_focus: [path.join(backend, 'a.go')],
+      repo_root: frontend,
+    })).rejects.toThrow(/PATH_ESCAPE/);
+  });
+
+  it('falls back to getRepoTopLevel when workspaceRoot has no repos', async () => {
+    (scanRepos as any).mockResolvedValue([]);
+    const out = await saveProgress(workspaceRoot, {
+      summary: 'work in sibling repo via absolute path',
+      next_steps: ['continue'],
+      files_in_focus: [path.join(frontend, 'src/a.ts')],
+    });
+    expect(out.repo_root).toBe(frontend);
+    expect(getRepoTopLevel).toHaveBeenCalled();
+  });
+
+  it('errors when no repos and files_in_focus are all relative paths', async () => {
+    (scanRepos as any).mockResolvedValue([]);
+    (getRepoTopLevel as any).mockResolvedValue(null);
+    await expect(saveProgress(workspaceRoot, {
+      summary: 'no way to find repo',
+      next_steps: ['x'],
+      files_in_focus: ['src/a.ts'],
+    })).rejects.toThrow(/NOT_IN_GIT_REPO/);
+  });
+
+  it('errors when inferred repos span multiple', async () => {
+    (scanRepos as any).mockResolvedValue([]);
+    (getRepoTopLevel as any).mockImplementation(async (cwd: string) =>
+      cwd.startsWith(frontend) ? frontend : backend);
+    await expect(saveProgress(workspaceRoot, {
+      summary: 'spanning two repos',
+      next_steps: ['x'],
+      files_in_focus: [path.join(frontend, 'a.ts'), path.join(backend, 'b.go')],
+    })).rejects.toThrow(/MULTI_REPO_FILES/);
+  });
 });

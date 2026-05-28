@@ -88,6 +88,20 @@ describe('auto-install env', () => {
     }
   });
 
+  it('tryAutoInstallRules skips when workspaceRoot equals packageRoot (self-install guard)', async () => {
+    process.env.WORK_RESUME_AUTO_INSTALL_RULES = '1';
+    process.env.WORK_RESUME_AUTO_INSTALL_TARGETS = 'cursor';
+    const prevProjectRoot = process.env.WORK_RESUME_PROJECT_ROOT;
+    process.env.WORK_RESUME_PROJECT_ROOT = PKG_ROOT;
+    try {
+      const r = await tryAutoInstallRules(PKG_ROOT);
+      expect(r).toBeNull();
+    } finally {
+      if (prevProjectRoot === undefined) delete process.env.WORK_RESUME_PROJECT_ROOT;
+      else process.env.WORK_RESUME_PROJECT_ROOT = prevProjectRoot;
+    }
+  });
+
   it('buildServerInstructions includes core triggers', async () => {
     const text = await buildServerInstructions(PKG_ROOT);
     expect(text).toContain('save_progress');

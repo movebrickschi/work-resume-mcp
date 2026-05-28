@@ -64,7 +64,7 @@ export async function dispatchTool(name: string, args: any, workspaceRoot: strin
 const TOOL_SCHEMAS = {
   save_progress: {
     name: 'save_progress',
-    description: 'Save current work progress as a semantic checkpoint. Call when completing a TodoWrite item, before context switch, before blockers, after each Edit/Write, or before replying to the user.',
+    description: 'Save current work progress as a semantic checkpoint. Call when completing a TodoWrite item, before context switch, before blockers, after each Edit/Write, or before replying to the user. For cross-project work (Cursor workspace = empty dir, actual changes in a sibling project), pass repo_root explicitly or use absolute paths in files_in_focus so the repo can be inferred.',
     inputSchema: {
       type: 'object',
       required: ['summary', 'next_steps', 'files_in_focus'],
@@ -75,6 +75,7 @@ const TOOL_SCHEMAS = {
         blockers:       { type: 'array', items: { type: 'string' } },
         context_notes:  { type: 'string' },
         todo_status:    { type: 'array', items: { type: 'object' } },
+        repo_root:      { type: 'string', description: 'Explicit git repo root (absolute path). Required when the Cursor workspace itself is not a git repo (cross-project work).' },
       },
     },
   },
@@ -138,6 +139,12 @@ async function main() {
 
   try {
     const auto = await tryAutoInstallRules(pkgRoot);
+    if (auto === null && process.env.WORK_RESUME_AUTO_INSTALL_RULES === '1') {
+      const sameAsPkg = path.resolve(workspaceRoot) === path.resolve(pkgRoot);
+      if (sameAsPkg) {
+        console.error('[work-resume-mcp] skip self-install (workspaceRoot equals packageRoot)');
+      }
+    }
     if (auto?.written.length) {
       console.error(`[work-resume-mcp] auto-installed rules (${auto.written.length} file(s)) → ${auto.written.join(', ')}`);
     }

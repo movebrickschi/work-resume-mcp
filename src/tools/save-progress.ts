@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import { getGitStatus, isGitRepo } from '../git.js';
+import { getGitStatus, getRepoTopLevel, isGitRepo } from '../git.js';
 import { scanRepos, resolveRepoForFile } from '../repo-scanner.js';
 import { writeSemantic } from '../storage.js';
 import { loadConfig } from '../config.js';
@@ -11,6 +11,7 @@ export interface SaveProgressInput {
   blockers?: string[];
   context_notes?: string;
   todo_status?: Array<{ id: string; content: string; status: string }>;
+  repo_root?: string;
 }
 
 export interface SaveProgressOutput {
@@ -47,20 +48,62 @@ export async function saveProgress(workspaceRoot: string, input: SaveProgressInp
   }
 
   const cfg = loadConfig(workspaceRoot);
-  const repos = await scanRepos(cfg.projectRoot, cfg.maxRepoScanDepth);
-  if (repos.length === 0) err('NOT_IN_GIT_REPO', `no git repos found under ${cfg.projectRoot}`);
-
   let targetRepo: string | null = null;
-  for (const f of input.files_in_focus) {
-    const abs = path.isAbsolute(f) ? f : path.resolve(workspaceRoot, f);
-    const repo = resolveRepoForFile(abs, repos);
-    if (!repo) err('PATH_ESCAPE', `file outside all repos: ${f}`);
-    if (targetRepo && repo !== targetRepo) err('MULTI_REPO_FILES', `files span repos: ${targetRepo} vs ${repo}`);
-    targetRepo = repo;
-  }
-  if (!targetRepo) targetRepo = repos[0];
 
-  if (!(await isGitRepo(targetRepo))) {
+  if (input.repo_root && input.repo_root.trim()) {
+    const explicit = path.resolve(input.repo_root.trim());
+    if (!(await isGitRepo(explicit))) {
+      err('NOT_IN_GIT_REPO', `repo_root is not a git repo: ${explicit}`);
+    }
+    targetRepo = explicit;
+    for (const f of input.files_in_focus) {
+      const abs = path.isAbsolute(f) ? f : path.resolve(workspaceRoot, f);
+      if (abs !== explicit && !abs.startsWith(explicit + path.sep)) {
+        err('PATH_ESCAPE', `file outside repo_root ${explicit}: ${f}`);
+      }
+    }
+  } else {
+    const repos = await scanRepos(cfg.projectRoot, cfg.maxRepoScanDepth);
+
+    if (repos.length > 0) {
+      for (const f of input.files_in_focus) {
+        const abs = path.isAbsolute(f) ? f : path.resolve(workspaceRoot, f);
+        const repo = resolveRepoForFile(abs, repos);
+        if (!repo) err('PATH_ESCAPE', `file outside all repos: ${f} (pass repo_root explicitly for cross-project work)`);
+        if (targetRepo && repo !== targetRepo) err('MULTI_REPO_FILES', `files span repos: ${targetRepo} vs ${repo}`);
+        targetRepo = repo;
+      }
+      if (!targetRepo) targetRepo = repos[0];
+    } else {
+      const absoluteFiles = input.files_in_focus.filter((f) => path.isAbsolute(f));
+      if (absoluteFiles.length === 0) {
+        err('NOT_IN_GIT_REPO',
+          `no git repos found under ${cfg.projectRoot}; ` +
+          `pass repo_root explicitly or use absolute paths in files_in_focus`);
+      }
+      let inferred: string | null = null;
+      for (const f of absoluteFiles) {
+        const repo = await getRepoTopLevel(path.dirname(f));
+        if (!repo) {
+          err('NOT_IN_GIT_REPO',
+            `cannot resolve git repo from file: ${f}; ` +
+            `pass repo_root explicitly`);
+        }
+        if (inferred && repo !== inferred) {
+          err('MULTI_REPO_FILES', `files span repos: ${inferred} vs ${repo}`);
+        }
+        inferred = repo;
+      }
+      if (!inferred) {
+        err('NOT_IN_GIT_REPO',
+          `no git repos inferable from files_in_focus; ` +
+          `pass repo_root explicitly`);
+      }
+      targetRepo = inferred;
+    }
+  }
+
+  if (!targetRepo || !(await isGitRepo(targetRepo))) {
     err('NOT_IN_GIT_REPO', `target repo not a git repo: ${targetRepo}`);
   }
 
