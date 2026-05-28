@@ -2,11 +2,19 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { scanRepos, resolveRepoForFile, clearScanCache } from '../../src/repo-scanner.js';
+import { execa } from 'execa';
+import { scanRepos, resolveRepoForFile, resolveTargetRepo, clearScanCache } from '../../src/repo-scanner.js';
 
 async function mkRepo(root: string, rel: string): Promise<string> {
   const repo = path.join(root, rel);
   await fs.mkdir(path.join(repo, '.git'), { recursive: true });
+  return repo;
+}
+
+async function mkRealRepo(root: string, rel: string): Promise<string> {
+  const repo = path.join(root, rel);
+  await fs.mkdir(repo, { recursive: true });
+  await execa('git', ['init', '-q', '-b', 'main'], { cwd: repo });
   return repo;
 }
 
@@ -96,5 +104,50 @@ describe('resolveRepoForFile', () => {
     await mkRepo(tmp, 'inside');
     const repos = await scanRepos(tmp, 3);
     expect(resolveRepoForFile(path.join(tmp, 'outside.txt'), repos)).toBeNull();
+  });
+});
+
+describe('resolveTargetRepo', () => {
+  let tmp: string;
+  beforeEach(async () => {
+    tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'wr-target-'));
+    clearScanCache();
+  });
+  afterEach(async () => {
+    await fs.rm(tmp, { recursive: true, force: true });
+  });
+
+  it('honors explicit repoRoot and validates it is a git repo', async () => {
+    const repo = await mkRealRepo(tmp, 'project-a');
+    const out = await resolveTargetRepo({
+      repoRoot: repo,
+      workspaceRoot: '/totally/unrelated',
+      maxScanDepth: 0,
+    });
+    expect(norm(out.repo)).toBe(norm(repo));
+    expect(out.allRepos.map(norm)).toEqual([norm(repo)]);
+  });
+
+  it('throws NOT_IN_GIT_REPO when explicit repoRoot is not a git repo', async () => {
+    const notRepo = path.join(tmp, 'plain-dir');
+    await fs.mkdir(notRepo, { recursive: true });
+    await expect(resolveTargetRepo({
+      repoRoot: notRepo,
+      workspaceRoot: '/whatever',
+      maxScanDepth: 0,
+    })).rejects.toThrow(/NOT_IN_GIT_REPO/);
+  });
+
+  it('falls back to workspace scan when no explicit repoRoot', async () => {
+    const a = await mkRepo(tmp, 'a');
+    const b = await mkRepo(tmp, 'b');
+    const out = await resolveTargetRepo({ workspaceRoot: tmp, maxScanDepth: 3 });
+    expect(out.allRepos.map(norm).sort()).toEqual([norm(a), norm(b)].sort());
+    expect(out.allRepos.map(norm)).toContain(norm(out.repo));
+  });
+
+  it('throws NOT_IN_GIT_REPO with cross-project hint when workspace has nothing', async () => {
+    await expect(resolveTargetRepo({ workspaceRoot: tmp, maxScanDepth: 3 }))
+      .rejects.toThrow(/NOT_IN_GIT_REPO.*cross-project/);
   });
 });

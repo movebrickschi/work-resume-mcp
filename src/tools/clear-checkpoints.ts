@@ -1,5 +1,5 @@
 import { removeBeforeTimestamp, readIndex, emptyTrashOlderThanDays } from '../storage.js';
-import { scanRepos } from '../repo-scanner.js';
+import { resolveTargetRepo } from '../repo-scanner.js';
 import { loadConfig } from '../config.js';
 
 export interface ClearCheckpointsInput {
@@ -24,10 +24,11 @@ export async function clearCheckpoints(workspaceRoot: string, input: ClearCheckp
     err('VALIDATION', `unknown scope: ${input.scope}`);
   }
   const cfg = loadConfig(workspaceRoot);
-  const repos = await scanRepos(cfg.projectRoot, cfg.maxRepoScanDepth);
-  if (repos.length === 0) err('NOT_IN_GIT_REPO', `no git repos found`);
-
-  const repo = input.repo_root && repos.includes(input.repo_root) ? input.repo_root : repos[0];
+  const { repo } = await resolveTargetRepo({
+    repoRoot: input.repo_root,
+    workspaceRoot: cfg.projectRoot,
+    maxScanDepth: cfg.maxRepoScanDepth,
+  });
 
   if (input.scope === 'all' && !input.before && !input.branch && !input.dry_run) {
     err('CONFIRM_REQUIRED', `scope=all without filters requires dry_run=true on first call. Re-run with dry_run=false after reviewing the dry-run output.`);

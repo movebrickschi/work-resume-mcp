@@ -1,5 +1,5 @@
 import { readIndex } from '../storage.js';
-import { scanRepos } from '../repo-scanner.js';
+import { resolveTargetRepo } from '../repo-scanner.js';
 import { loadConfig } from '../config.js';
 
 export interface ListCheckpointsInput {
@@ -19,14 +19,13 @@ export interface ListedCheckpoint {
   triggered_by_tool?: string;
 }
 
-function err(code: string, message: string): never { throw new Error(`${code}: ${message}`); }
-
 export async function listCheckpoints(workspaceRoot: string, input: ListCheckpointsInput): Promise<ListedCheckpoint[]> {
   const cfg = loadConfig(workspaceRoot);
-  const repos = await scanRepos(cfg.projectRoot, cfg.maxRepoScanDepth);
-  if (repos.length === 0) err('NOT_IN_GIT_REPO', `no git repos found`);
-
-  const repo = input.repo_root && repos.includes(input.repo_root) ? input.repo_root : repos[0];
+  const { repo } = await resolveTargetRepo({
+    repoRoot: input.repo_root,
+    workspaceRoot: cfg.projectRoot,
+    maxScanDepth: cfg.maxRepoScanDepth,
+  });
   const limit = input.limit ?? 20;
   const kind = input.kind ?? 'semantic';
 

@@ -8,11 +8,15 @@ vi.mock('../../src/git.js', () => ({
   getGitStatus: vi.fn(),
   getRepoTopLevel: vi.fn(),
 }));
-vi.mock('../../src/repo-scanner.js', () => ({
-  scanRepos: vi.fn(),
-  resolveRepoForFile: vi.fn(),
-  clearScanCache: vi.fn(),
-}));
+vi.mock('../../src/repo-scanner.js', async () => {
+  const actual = await vi.importActual<typeof import('../../src/repo-scanner.js')>('../../src/repo-scanner.js');
+  return {
+    ...actual,
+    scanRepos: vi.fn(),
+    resolveRepoForFile: vi.fn(),
+    clearScanCache: vi.fn(),
+  };
+});
 
 import { saveProgress } from '../../src/tools/save-progress.js';
 import { isGitRepo, getGitStatus, getRepoTopLevel } from '../../src/git.js';

@@ -3,11 +3,15 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
 
-vi.mock('../../src/repo-scanner.js', () => ({
-  scanRepos: vi.fn(),
-  resolveRepoForFile: vi.fn(),
-  clearScanCache: vi.fn(),
-}));
+vi.mock('../../src/repo-scanner.js', async () => {
+  const actual = await vi.importActual<typeof import('../../src/repo-scanner.js')>('../../src/repo-scanner.js');
+  return {
+    ...actual,
+    scanRepos: vi.fn(),
+    resolveRepoForFile: vi.fn(),
+    clearScanCache: vi.fn(),
+  };
+});
 
 import { listCheckpoints } from '../../src/tools/list-checkpoints.js';
 import { writeSemantic, writePhysical } from '../../src/storage.js';

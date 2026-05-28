@@ -1,5 +1,5 @@
 import { getGitStatus, isGitRepo } from '../git.js';
-import { scanRepos } from '../repo-scanner.js';
+import { resolveTargetRepo } from '../repo-scanner.js';
 import { readLatestSemantic, readPhysicalsAfter, type SemanticCheckpoint, type PhysicalCheckpoint } from '../storage.js';
 import { loadConfig } from '../config.js';
 
@@ -17,10 +17,6 @@ export interface ResumeLatestOutput {
   hint: string;
   ago: string;
   available_repos?: string[];
-}
-
-function err(code: string, message: string): never {
-  throw new Error(`${code}: ${message}`);
 }
 
 function formatAgo(isoTs: string | undefined): string {
@@ -65,13 +61,11 @@ function buildHint(
 
 export async function resumeLatest(workspaceRoot: string, input: ResumeLatestInput): Promise<ResumeLatestOutput> {
   const cfg = loadConfig(workspaceRoot);
-  const repos = await scanRepos(cfg.projectRoot, cfg.maxRepoScanDepth);
-
-  if (repos.length === 0) {
-    err('NOT_IN_GIT_REPO', `no git repos found under ${cfg.projectRoot}`);
-  }
-
-  const repo = input.repo_root && repos.includes(input.repo_root) ? input.repo_root : repos[0];
+  const { repo, allRepos } = await resolveTargetRepo({
+    repoRoot: input.repo_root,
+    workspaceRoot: cfg.projectRoot,
+    maxScanDepth: cfg.maxRepoScanDepth,
+  });
   const status = (await isGitRepo(repo)) ? await getGitStatus(repo) : null;
 
   const sem = await readLatestSemantic(repo, input.branch ?? status?.branch);
@@ -87,6 +81,6 @@ export async function resumeLatest(workspaceRoot: string, input: ResumeLatestInp
     head_match,
     hint,
     ago: formatAgo(sem?.saved_at),
-    available_repos: repos.length > 1 ? repos : undefined,
+    available_repos: allRepos.length > 1 ? allRepos : undefined,
   };
 }

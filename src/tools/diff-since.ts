@@ -1,5 +1,5 @@
 import { readById } from '../storage.js';
-import { scanRepos } from '../repo-scanner.js';
+import { resolveTargetRepo } from '../repo-scanner.js';
 import { getDiffSinceCommit } from '../git.js';
 import { loadConfig } from '../config.js';
 
@@ -28,12 +28,15 @@ function parseFilesFromDiff(diff: string): string[] {
 export async function diffSince(workspaceRoot: string, input: DiffSinceInput): Promise<DiffSinceOutput> {
   if (!input.checkpoint_id) err('VALIDATION', 'checkpoint_id is required');
   const cfg = loadConfig(workspaceRoot);
-  const repos = await scanRepos(cfg.projectRoot, cfg.maxRepoScanDepth);
+  const { allRepos } = await resolveTargetRepo({
+    repoRoot: input.repo_root,
+    workspaceRoot: cfg.projectRoot,
+    maxScanDepth: cfg.maxRepoScanDepth,
+  });
 
   let foundRepo: string | null = null;
   let cp: any = null;
-  const candidates = input.repo_root ? [input.repo_root] : repos;
-  for (const r of candidates) {
+  for (const r of allRepos) {
     cp = await readById(r, input.checkpoint_id);
     if (cp) { foundRepo = r; break; }
   }

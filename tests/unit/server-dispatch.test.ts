@@ -9,11 +9,15 @@ vi.mock('../../src/tools/resume-latest.js', () => ({ resumeLatest: vi.fn().mockR
 vi.mock('../../src/tools/list-checkpoints.js', () => ({ listCheckpoints: vi.fn().mockResolvedValue([]) }));
 vi.mock('../../src/tools/diff-since.js', () => ({ diffSince: vi.fn().mockResolvedValue({ files_changed: [], diff: '', truncated: false }) }));
 vi.mock('../../src/tools/clear-checkpoints.js', () => ({ clearCheckpoints: vi.fn().mockResolvedValue({ repo_root: '/r', removed: [], remaining_count: 0, dry_run: true }) }));
-vi.mock('../../src/repo-scanner.js', () => ({
-  scanRepos: vi.fn().mockResolvedValue(['/r']),
-  resolveRepoForFile: vi.fn(),
-  clearScanCache: vi.fn(),
-}));
+vi.mock('../../src/repo-scanner.js', async () => {
+  const actual = await vi.importActual<typeof import('../../src/repo-scanner.js')>('../../src/repo-scanner.js');
+  return {
+    ...actual,
+    scanRepos: vi.fn().mockResolvedValue(['/r']),
+    resolveRepoForFile: vi.fn(),
+    clearScanCache: vi.fn(),
+  };
+});
 
 import { dispatchTool } from '../../src/index.js';
 import { autoSnapshotIfStale } from '../../src/auto-snapshot.js';

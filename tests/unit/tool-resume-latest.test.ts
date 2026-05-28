@@ -7,11 +7,15 @@ vi.mock('../../src/git.js', () => ({
   isGitRepo: vi.fn().mockResolvedValue(true),
   getGitStatus: vi.fn(),
 }));
-vi.mock('../../src/repo-scanner.js', () => ({
-  scanRepos: vi.fn(),
-  resolveRepoForFile: vi.fn(),
-  clearScanCache: vi.fn(),
-}));
+vi.mock('../../src/repo-scanner.js', async () => {
+  const actual = await vi.importActual<typeof import('../../src/repo-scanner.js')>('../../src/repo-scanner.js');
+  return {
+    ...actual,
+    scanRepos: vi.fn(),
+    resolveRepoForFile: vi.fn(),
+    clearScanCache: vi.fn(),
+  };
+});
 
 import { resumeLatest } from '../../src/tools/resume-latest.js';
 import { writeSemantic, writePhysical } from '../../src/storage.js';
