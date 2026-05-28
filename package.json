@@ -1,11 +1,20 @@
 {
   "name": "work-resume-mcp",
-  "version": "0.1.0",
-  "description": "Cross-session resume MCP server for Cursor / Claude Code / Codex",
+  "version": "0.1.4",
+  "description": "Cross-session resume MCP server for Cursor / Claude Code / Codex — keeps next_steps / summary / files_in_focus across disconnects, IDE crashes, and new sessions.",
+  "keywords": ["mcp", "model-context-protocol", "cursor", "claude-code", "codex", "agent", "checkpoint", "resume", "work-resume", "ai", "tree-sitter"],
+  "license": "MIT",
+  "author": "movebrickschi",
+  "homepage": "https://github.com/movebrickschi/work-resume-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/movebrickschi/work-resume-mcp.git"
+  },
+  "bugs": { "url": "https://github.com/movebrickschi/work-resume-mcp/issues" },
   "type": "module",
   "bin": { "work-resume-mcp": "dist/index.js" },
   "main": "dist/index.js",
-  "files": ["dist", "rules"],
+  "files": ["dist", "rules", "examples", "LICENSE", "README.md"],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
