@@ -7,6 +7,8 @@
 
 ## 安装
 
+> 需要 Node.js ≥ 20。
+
 ```bash
 # 全局安装（推荐）
 npm install -g work-resume-mcp
@@ -16,6 +18,8 @@ npx work-resume-mcp
 ```
 
 ## 注册到 IDE
+
+> 建议先 `npm install -g work-resume-mcp` 全局安装；否则 `npx` 在首次启动时需联网下载，可能超过 IDE 的 MCP 启动超时而报错。
 
 ### Cursor · 标准接入（已发布的 npm 包）
 
