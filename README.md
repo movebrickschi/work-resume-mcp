@@ -17,7 +17,9 @@ npx work-resume-mcp
 
 ## 注册到 IDE
 
-### Cursor (`~/.cursor/mcp.json`)
+### Cursor · 标准接入（已发布的 npm 包）
+
+`~/.cursor/mcp.json`：
 
 ```json
 {
@@ -29,6 +31,8 @@ npx work-resume-mcp
   }
 }
 ```
+
+> 想让规则自动写入工作区？给该条目加 `env`，见下方「配置 Rule · 自动绑定 MCP」。
 
 ### Claude Code
 
@@ -104,12 +108,26 @@ npx work-resume-mcp install-rules --target cursor --cwd /path/to/project
 
 ## 环境变量
 
-完整列表见 [spec §5](docs/specs/2026-05-27-work-resume-design.md#5-实现技术栈)。常用：
+全部为**可选**，均有默认值；整数项有最小值校验、枚举项有合法值校验，**填非法值会导致启动报错**。完整设计见 [spec §5](docs/specs/2026-05-27-work-resume-design.md#5-实现技术栈)。
 
-- `WORK_RESUME_PROJECT_ROOT` — 强制项目根
-- `WORK_RESUME_AUTO_RETENTION_HOURS` — 物理快照保留时长（默认 24）
-- `WORK_RESUME_LANGS` — tree-sitter 启用的语言列表
-- `WORK_RESUME_GRAMMAR_LOAD` — `lazy` (默认) / `eager`
+| 变量 | 必填 | 默认值 | 说明 |
+|---|---|---|---|
+| `WORK_RESUME_PROJECT_ROOT` | 否¹ | 自动探测 | 强制项目根（绝对路径） |
+| `WORK_RESUME_DIR` | 否 | `.work-resume` | 快照存储目录名 |
+| `WORK_RESUME_AUTO_INTERVAL_MS` | 否 | `60000` | 自动快照最小间隔（毫秒，min 1） |
+| `WORK_RESUME_AUTO_RETENTION_HOURS` | 否 | `24` | 物理（自动）快照保留小时数（min 1） |
+| `WORK_RESUME_TRASH_RETENTION_DAYS` | 否 | `7` | 软删除回收站保留天数（min 1） |
+| `WORK_RESUME_MAX_REPO_SCAN_DEPTH` | 否 | `3` | 向下扫描兄弟 git 仓库的最大深度（min 0） |
+| `WORK_RESUME_LANGS` | 否 | `ts,tsx,js,jsx,py,go,rs,java,rb,php` | tree-sitter 启用语言（逗号分隔） |
+| `WORK_RESUME_GRAMMAR_LOAD` | 否 | `lazy` | `lazy` / `eager`（eager=启动即加载全部语法） |
+| `WORK_RESUME_FALLBACK` | 否 | `regex` | 解析失败回退：`regex` / `empty` |
+| `WORK_RESUME_AUTO_INSTALL_RULES` | 否 | 关 | `1` = 启动时自动写规则文件 |
+| `WORK_RESUME_AUTO_INSTALL_TARGETS` | 否 | `cursor,claude,agents` | 自动装规则的目标（可加 `codex`），仅在上一项 = `1` 时生效 |
+| `WORK_RESUME_AUTO_INSTALL_GLOBAL_CODEX` | 否 | 关 | `1` = 同时写 `~/.codex/AGENTS.md` |
+
+> ¹ 不设时按 `cwd` / `WORKSPACE_FOLDER_PATHS` / `VSCODE_CWD` 自动探测；若工作区目录名本身含 `work-resume-mcp`，或探测落到编辑器安装目录，建议显式设置。
+>
+> `WORKSPACE_FOLDER_PATHS`、`VSCODE_CWD`、`USERPROFILE`/`HOME` 由编辑器/系统注入，无需手动设置。
 
 ## v1 已知限制
 
