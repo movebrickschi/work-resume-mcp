@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -135,6 +136,10 @@ const TOOL_SCHEMAS = {
 async function main() {
   const workspaceRoot = resolveWorkspaceRoot();
   const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  let pkgVersion = '0.0.0';
+  try {
+    pkgVersion = JSON.parse(readFileSync(path.join(pkgRoot, 'package.json'), 'utf8')).version ?? pkgVersion;
+  } catch { /* keep fallback */ }
   const cfg = loadConfig(workspaceRoot);
 
   try {
@@ -160,7 +165,7 @@ async function main() {
   const instructions = await buildServerInstructions(pkgRoot).catch(() => undefined);
 
   const server = new Server(
-    { name: 'work-resume-mcp', version: '0.1.0' },
+    { name: 'work-resume-mcp', version: pkgVersion },
     { capabilities: { tools: {} }, instructions },
   );
 
